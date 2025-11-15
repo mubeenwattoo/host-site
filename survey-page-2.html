@@ -17,13 +17,19 @@
 <body class="font-[lexend]">
 
     <section class="gradient-bg pt-8  lg:px-[64px] lg:pb-[48px] pb-[24px] p-6 ">
-        <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
+  <div class="flex items-start gap-6">
+             <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
                 class="lg:w-[124px] lg:h-[48px] w-[82px] h-[32px] "></a>
 
-
-        <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:mt-6 mt-12 text-center">Tell Us Your Preferences</h2>
-        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-10 mb-6">Help us find the perfect match for your household
+                <div class="flex flex-col items-center lg:ml-0 -ml-16 w-full">
+             <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:-mt-4 mt-12 text-center">Tell Us Your Preferences
+            </h2>
+        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-2 mb-6">Help us find the perfect match for your household
         </h6>
+        </div>
+        </div>
+
+  
 
         <div class=" mx-auto grid lg:grid-cols-[320px_1fr] items-center gap-16">
 
@@ -84,7 +90,7 @@
                 <div>
 
 
-                    <div class="text-center">
+                    <div class="text-center mt-6">
                         <label class="text-[#2D2D2D] lg:text-[20px] text-[16px]  font-[400] ">
                         When should your helper work?
                         </label>
@@ -162,7 +168,7 @@
                 </div>
 
                 <!-- BUTTON -->
-      <div class="lg:mt-16  mx-auto relative flex items-center gap-8 justify-center">
+      <div class="lg:mt-6  mx-auto relative flex items-center gap-8 justify-center">
  <a href="./survey-page-1.html" class="lg:flex hidden"><img src="./assets/images/back-button.png" alt="back-button" class="w-auto lg:mt-6 hover:opacity-70 duration-300"></a>
 
 
@@ -172,7 +178,7 @@
         </button>
       </div>
 
-                    <div class="flex items-center justify-center gap-2 mt-10">
+                    <div class="flex items-center justify-center gap-2 mt-4">
                         <div class="w-[8px] h-[8px] bg-[rgba(125,122,116,0.50)] rounded-full"></div>
                         <div class="w-[96px] h-[8px] bg-[#5B7B5A] rounded-full"></div>
 
@@ -242,6 +248,49 @@
         }
     }
 
+    // Function to collect and save data
+    function savePage2Data() {
+        // Get existing data or create new object
+        let data = {};
+        const existingData = localStorage.getItem('surveyData');
+        if (existingData) {
+            data = JSON.parse(existingData);
+        }
+
+        data.page = 'survey-page-2';
+
+        // Collect selected time preference
+        const timeRow = Array.from(document.querySelectorAll(".time-row [data-pill]"));
+        const selectedTime = timeRow
+            .filter(pill => pill.classList.contains("bg-[#675F57]"))
+            .map(pill => pill.textContent.trim())[0] || '';
+        data.workTime = selectedTime;
+
+        // Collect selected gender preference
+        const genderRow = Array.from(document.querySelectorAll(".gender-row [data-pill]"));
+        const selectedGender = genderRow
+            .filter(pill => pill.classList.contains("bg-[#675F57]"))
+            .map(pill => pill.textContent.trim())[0] || '';
+        data.genderPreference = selectedGender;
+
+        // Collect selected hours
+        const hoursRow = Array.from(document.querySelectorAll(".hours-row [data-pill]"));
+        const selectedHours = hoursRow
+            .filter(pill => pill.classList.contains("bg-[#675F57]"))
+            .map(pill => pill.textContent.trim())[0] || '';
+        data.hoursPerWeek = selectedHours;
+
+        // Collect selected food preference
+        const foodRow = Array.from(document.querySelectorAll(".food-row [data-pill]"));
+        const selectedFood = foodRow
+            .filter(pill => pill.classList.contains("bg-[#675F57]"))
+            .map(pill => pill.textContent.trim())[0] || '';
+        data.foodArrangement = selectedFood;
+
+        // Save to localStorage
+        localStorage.setItem('surveyData', JSON.stringify(data));
+    }
+
     // Continue button navigation
     const continueBtn = document.getElementById("continueBtn");
     continueBtn.addEventListener("click", (e) => {
@@ -249,6 +298,9 @@
             e.preventDefault();
             return;
         }
+        
+        // Save data before navigating
+        savePage2Data();
         window.location.href = "survey-page-3.html";
     });
 </script>

@@ -17,18 +17,25 @@
 <body class="font-[lexend]">
 
     <section class="gradient-bg pt-8  lg:px-[64px] lg:pb-[48px] pb-[24px] p-6 ">
-        <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
+        <div class="flex items-start gap-6">
+             <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
                 class="lg:w-[124px] lg:h-[48px] w-[82px] h-[32px] "></a>
 
-
-        <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:mt-6 mt-12 text-center">Tell Us About Your
+                <div class="flex flex-col items-center lg:ml-0 -ml-16 w-full">
+             <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:-mt-4 mt-12 text-center">Tell Us About Your
             Needs</h2>
-        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-10 mb-6">Let’s make your every day easier
+        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-2 mb-6">Let’s make your every day easier
         </h6>
+        </div>
+        </div>
+       
+
+
+       
 
         <div class=" mx-auto grid lg:grid-cols-[320px_1fr] items-center gap-16">
 
-            <div class="lg:flex hidden flex-col gap-10">
+            <div class="lg:flex hidden flex-col gap-8">
 
                 <!-- Step 1 -->
                 <div class="flex flex-col items-start  gap-3 p-6 rounded-[14px] border-[2px] border-[var(--Color-Green,#5B7B5A)]
@@ -122,11 +129,11 @@
                     </label>
                 </div>
 
-                <div class="grid grid-cols-2  gap-4 mt-6 lg:w-[63%] mx-auto duration-row">
+                <div class="grid lg:grid-cols-2  gap-4 mt-6 lg:w-[63%] mx-auto duration-row">
                     <button data-pill class="pill border border-[#675F57] lg:px-8 px-4  py-[10px] 
-          rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Cooking</button>
+          rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Less than 6 months</button>
                     <button data-pill class="pill border border-[#675F57] lg:px-8 px-4  py-[10px] 
-          rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Organizing</button>
+          rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">More than 6 months</button>
 
 
 
@@ -218,6 +225,35 @@
             }
         }
 
+        // Function to collect and save data
+        function savePage1Data() {
+            const data = {
+                page: 'survey-page-1',
+                timestamp: new Date().toISOString()
+            };
+
+            // Collect selected services
+            const servicesRow = Array.from(
+                document.querySelectorAll(".services-row [data-pill]")
+            );
+            const selectedServices = servicesRow
+                .filter(pill => pill.classList.contains("bg-[#675F57]"))
+                .map(pill => pill.textContent.trim());
+            data.services = selectedServices;
+
+            // Collect selected duration
+            const durationRow = Array.from(
+                document.querySelectorAll(".duration-row [data-pill]")
+            );
+            const selectedDuration = durationRow
+                .filter(pill => pill.classList.contains("bg-[#675F57]"))
+                .map(pill => pill.textContent.trim())[0] || '';
+            data.duration = selectedDuration;
+
+            // Save to localStorage
+            localStorage.setItem('surveyData', JSON.stringify(data));
+        }
+
         // Disable navigation unless active
         const continueBtn = document.getElementById("continueBtn");
         continueBtn.addEventListener("click", (e) => {
@@ -225,6 +261,9 @@
                 e.preventDefault();
                 return;
             }
+            
+            // Save data before navigating
+            savePage1Data();
             window.location.href = "survey-page-2.html";
         });
     </script>

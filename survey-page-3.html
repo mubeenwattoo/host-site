@@ -17,15 +17,23 @@
 <body class="font-[lexend]">
 
     <section class="gradient-bg pt-8  lg:px-[64px] lg:pb-[48px] pb-[24px] p-6 ">
-        <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
+ <div class="flex items-start gap-6">
+             <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
                 class="lg:w-[124px] lg:h-[48px] w-[82px] h-[32px] "></a>
 
-
-        <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:mt-6 mt-12 text-center">Details About You
-            and Your Home</h2>
-        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-10 mb-6">Just a few quick questions to
+                <div class="flex flex-col items-center lg:ml-0 -ml-16 w-full">
+             <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:-mt-4 mt-12 text-center">Details About You
+            and Your Home
+            </h2>
+        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-2 mb-6">
+            Just a few quick questions to
             help us serve you better
         </h6>
+        </div>
+        </div>
+
+       
+
 
         <div class=" mx-auto grid lg:grid-cols-[320px_1fr] items-center gap-16">
 
@@ -114,15 +122,27 @@
            border-2 gradient-bg border-[rgba(103,95,87,0.30)]
            rounded-[10px] shadow-lg z-50">
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Member 1
+                                         1
                                     </div>
 
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Member 2
+                                     2
                                     </div>
 
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Member 3
+                                     3
+                                    </div>
+                                    <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                     4
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                     5
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                     6
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                     6+
                                     </div>
                                 </div>
 
@@ -150,15 +170,24 @@
            border-2 gradient-bg border-[rgba(103,95,87,0.30)]
            rounded-[10px] shadow-lg z-50">
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        14-20
+                                        20-29
                                     </div>
 
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        20-25
+                                        30-39
                                     </div>
 
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        25-30
+                                        40-49
+                                    </div>
+                                    <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                        50-59
+                                    </div>
+                                    <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                        60-69
+                                    </div>
+                                    <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                        70+
                                     </div>
                                 </div>
 
@@ -185,16 +214,26 @@
                                 <div class=" dropdown-menu hidden absolute left-0 right-0 mt-2  
            border-2 gradient-bg border-[rgba(103,95,87,0.30)]
            rounded-[10px] shadow-lg z-50">
+                                    
+
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Count 1
+                                         2
                                     </div>
 
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Count 2
+                                         3
                                     </div>
-
                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
-                                        Count 3
+                                         4
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                         5
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                         6
+                                    </div>
+                                     <div data-option class="px-4 py-2 text-[#675F57] hover:bg-[#C9D5BD] cursor-pointer">
+                                         7+
                                     </div>
                                 </div>
 
@@ -363,6 +402,56 @@
       checkFormValidity();
     });
   }
+    // Function to collect and save data
+    function savePage3Data() {
+        // Get existing data or create new object
+        let data = {};
+        const existingData = localStorage.getItem('surveyData');
+        if (existingData) {
+            data = JSON.parse(existingData);
+        }
+
+        data.page = 'survey-page-3';
+
+        // Collect dropdown values
+        const dropdowns = document.querySelectorAll(".dropdown-field");
+        dropdowns.forEach((dropdown, index) => {
+            const valueSpan = dropdown.querySelector(".dropdown-value");
+            const value = valueSpan ? valueSpan.textContent.trim() : '';
+            
+            // Identify dropdown by its position or parent context
+            const label = dropdown.closest('.flex').querySelector('span');
+            if (label) {
+                const labelText = label.textContent.trim();
+                if (labelText.includes('Household Members')) {
+                    data.householdMembers = value;
+                } else if (labelText.includes('Head of Household Age')) {
+                    data.headOfHouseholdAge = value;
+                } else if (labelText.includes('Bedroom Count')) {
+                    data.bedroomCount = value;
+                }
+            }
+        });
+
+        // Collect input field values
+        const inputs = document.querySelectorAll(".input-field");
+        inputs.forEach(input => {
+            const placeholder = input.placeholder.toLowerCase();
+            if (placeholder.includes('zip')) {
+                data.zipCode = input.value.trim();
+            } else if (placeholder.includes('address')) {
+                data.address = input.value.trim();
+            } else if (placeholder.includes('first name')) {
+                data.firstName = input.value.trim();
+            } else if (placeholder.includes('email')) {
+                data.email = input.value.trim();
+            }
+        });
+
+        // Save to localStorage
+        localStorage.setItem('surveyData', JSON.stringify(data));
+    }
+
     // CONTINUE BUTTON NAVIGATION
     // =============================
     const continueBtn = document.getElementById("continueBtn");
@@ -372,6 +461,9 @@
             e.preventDefault();
             return;
         }
+        
+        // Save data before navigating
+        savePage3Data();
         window.location.href = "host-pricing-page.html";
     });
 

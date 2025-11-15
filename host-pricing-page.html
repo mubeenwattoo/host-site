@@ -10,6 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
  
+<!-- 
+  GOOGLE SHEETS INTEGRATION:
+  Your Google Apps Script Web App URL is configured below.
+  See GOOGLE_SHEETS_SETUP.md for detailed setup instructions.
+-->
+<script data-google-script-url="https://script.google.com/macros/s/AKfycbytgLUmFFaCI7SVRptxOHCY7f5aP9dNiRMhf-KuYqrkPc-ehKqv1SJp3HAmLsbSFYK6/exec"></script>
 
 <title>Host Pricing pAGE</title>
 </head>
@@ -342,6 +348,77 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Function to collect all survey data and send to Google Sheets
+  async function submitToGoogleSheets(selectedPlan) {
+    // Get all stored data
+    let allData = {};
+    const storedData = localStorage.getItem('surveyData');
+    if (storedData) {
+      allData = JSON.parse(storedData);
+    }
+
+    // Add pricing plan selection
+    allData.selectedPlan = selectedPlan;
+    allData.submissionTimestamp = new Date().toISOString();
+
+    // Prepare data for Google Sheets (in correct sequence)
+    const sheetData = {
+      timestamp: allData.submissionTimestamp || new Date().toISOString(),
+      // Page 1 data
+      services: (allData.services || []).join(', '),
+      duration: allData.duration || '',
+      // Page 2 data
+      workTime: allData.workTime || '',
+      genderPreference: allData.genderPreference || '',
+      hoursPerWeek: allData.hoursPerWeek || '',
+      foodArrangement: allData.foodArrangement || '',
+      // Page 3 data
+      householdMembers: allData.householdMembers || '',
+      headOfHouseholdAge: allData.headOfHouseholdAge || '',
+      bedroomCount: allData.bedroomCount || '',
+      zipCode: allData.zipCode || '',
+      address: allData.address || '',
+      firstName: allData.firstName || '',
+      email: allData.email || '',
+      // Page 4 data
+      selectedPlan: selectedPlan
+    };
+
+    // Get the Google Apps Script URL from a script tag or use default
+    const scriptTag = document.querySelector('script[data-google-script-url]');
+    const GOOGLE_SCRIPT_URL = scriptTag ? scriptTag.getAttribute('data-google-script-url') : 'YOUR_GOOGLE_APPS_SCRIPT_URL';
+
+    // Submit using form data (works better with Google Apps Script)
+    const formData = new FormData();
+    Object.keys(sheetData).forEach(key => {
+      formData.append(key, sheetData[key]);
+    });
+
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        console.log('Data submitted successfully');
+      } else {
+        console.error('Error submitting data:', response.statusText);
+      }
+      
+      // Clear localStorage after submission attempt
+      localStorage.removeItem('surveyData');
+      
+      // Navigate to send.html
+      window.location.href = "send.html";
+    } catch (error) {
+      console.error('Error submitting data:', error);
+      // Still navigate even if there's an error
+      localStorage.removeItem('surveyData');
+      window.location.href = "send.html";
+    }
+  }
+
   // Function to select premium plan
   function selectPremium() {
     resetAll();
@@ -365,8 +442,8 @@ document.addEventListener("DOMContentLoaded", () => {
       premiumCard.style.borderColor = "#BE5103";
     }
 
-    // Navigate to send.html
-    window.location.href = "send.html";
+    // Submit data to Google Sheets
+    submitToGoogleSheets('Premium');
   }
 
   // Function to select basic plan
@@ -392,8 +469,8 @@ document.addEventListener("DOMContentLoaded", () => {
       basicCard.style.borderColor = "#BE5103";
     }
 
-    // Navigate to send.html
-    window.location.href = "send.html";
+    // Submit data to Google Sheets
+    submitToGoogleSheets('Basic');
   }
 
   // Function to select concierge plan
@@ -419,8 +496,8 @@ document.addEventListener("DOMContentLoaded", () => {
       conciergeCard.style.borderColor = "#BE5103";
     }
 
-    // Navigate to send.html
-    window.location.href = "send.html";
+    // Submit data to Google Sheets
+    submitToGoogleSheets('Concierge');
   }
 
   // Add event listeners to premium buttons
