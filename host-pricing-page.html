@@ -10,11 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
  
-<!-- 
-  GOOGLE SHEETS INTEGRATION:
-  Your Google Apps Script Web App URL is configured below.
-  See GOOGLE_SHEETS_SETUP.md for detailed setup instructions.
--->
+
 <script data-google-script-url="https://script.google.com/macros/s/AKfycbytgLUmFFaCI7SVRptxOHCY7f5aP9dNiRMhf-KuYqrkPc-ehKqv1SJp3HAmLsbSFYK6/exec"></script>
 
 <title>Host Pricing pAGE</title>
@@ -350,6 +346,180 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Function to send data to Zapier webhook (triggers Hireflix)
+  async function submitToZapier(selectedPlan) {
+    console.log('🚀 Starting Zapier submission...');
+    
+    // Get all stored data
+    let allData = {};
+    const storedData = localStorage.getItem('surveyData');
+    
+    if (!storedData) {
+      console.error('❌ No survey data found in localStorage!');
+      return { success: false, error: 'No data in localStorage' };
+    }
+    
+    try {
+      allData = JSON.parse(storedData);
+      console.log('📦 Data from localStorage:', allData);
+    } catch (error) {
+      console.error('❌ Error parsing localStorage data:', error);
+      return { success: false, error: 'Failed to parse data' };
+    }
+
+    // Prepare data for Zapier webhook
+    // Zapier will forward this to Hireflix
+    // IMPORTANT: Hireflix expects 'first_name' (with underscore) and 'email'
+    const firstName = (allData.firstName || '').trim();
+    const email = (allData.email || '').trim();
+    
+    // Validate required fields
+    if (!email) {
+      console.error('❌ Email is missing or empty!');
+      console.error('❌ All data:', allData);
+      return { success: false, error: 'Email is required' };
+    }
+    
+    if (!firstName) {
+      console.error('❌ First name is missing or empty!');
+      console.error('❌ All data:', allData);
+      return { success: false, error: 'First name is required' };
+    }
+    
+    const zapierData = {
+      // Required fields for Hireflix (must match Hireflix field names exactly)
+      email: email,
+      first_name: firstName,  // Hireflix expects 'first_name' with underscore
+      
+      // Also send alternative formats for compatibility
+      firstName: firstName,    // Keep camelCase for other systems
+      name: firstName,         // Some systems use 'name'
+      
+      // Additional data that might be useful
+      selectedPlan: selectedPlan,
+      services: (allData.services || []).join(', '),
+      duration: allData.duration || '',
+      workTime: allData.workTime || '',
+      genderPreference: allData.genderPreference || '',
+      hoursPerWeek: allData.hoursPerWeek || '',
+      foodArrangement: allData.foodArrangement || '',
+      householdMembers: allData.householdMembers || '',
+      headOfHouseholdAge: allData.headOfHouseholdAge || '',
+      bedroomCount: allData.bedroomCount || '',
+      zipCode: allData.zipCode || '',
+      address: allData.address || '',
+      timestamp: new Date().toISOString()
+    };
+
+    // Log the data being sent (for debugging)
+    console.log('📤 Sending data to Zapier:');
+    console.log('   Email:', email);
+    console.log('   First Name:', firstName);
+    console.log('   Full payload:', JSON.stringify(zapierData, null, 2));
+
+    // Zapier webhook URL
+    const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/25392582/u8n0xd5/';
+    console.log('🌐 Webhook URL:', ZAPIER_WEBHOOK_URL);
+
+    try {
+      console.log('⏳ Sending POST request to Zapier...');
+      
+      // Zapier webhooks work better with form data to avoid CORS issues
+      // Convert JSON data to FormData
+      const formData = new FormData();
+      Object.keys(zapierData).forEach(key => {
+        formData.append(key, zapierData[key]);
+      });
+      
+      // Also send as URL-encoded data (alternative method that works with CORS)
+      const urlEncodedData = new URLSearchParams();
+      Object.keys(zapierData).forEach(key => {
+        urlEncodedData.append(key, zapierData[key]);
+      });
+
+      // Try FormData first (most compatible with Zapier)
+      const response = await fetch(ZAPIER_WEBHOOK_URL, {
+        method: 'POST',
+        // Don't set Content-Type header - browser will set it automatically for FormData
+        // This avoids CORS preflight issues
+        body: formData
+      });
+
+      console.log('📥 Response received. Status:', response.status, response.statusText);
+
+      if (response.ok) {
+        // Try to parse as JSON, but handle text responses too
+        let result;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          result = await response.json();
+        } else {
+          result = await response.text();
+        }
+        console.log('✅ Data sent to Zapier successfully!');
+        console.log('✅ Response:', result);
+        console.log('✅ Response status:', response.status);
+        return { success: true, response: result };
+      } else {
+        console.error('❌ Error sending data to Zapier');
+        console.error('❌ Response status:', response.status, response.statusText);
+        // Try to get error details
+        const errorText = await response.text();
+        console.error('❌ Error details:', errorText);
+        
+        // If FormData failed, try URL-encoded as fallback
+        console.log('🔄 Trying fallback method (URL-encoded)...');
+        try {
+          const fallbackResponse = await fetch(ZAPIER_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: urlEncodedData
+          });
+          
+          if (fallbackResponse.ok) {
+            const fallbackResult = await fallbackResponse.text();
+            console.log('✅ Fallback method succeeded!');
+            return { success: true, response: fallbackResult, method: 'url-encoded' };
+          }
+        } catch (fallbackError) {
+          console.error('❌ Fallback method also failed:', fallbackError);
+        }
+        
+        return { success: false, error: response.statusText, details: errorText };
+      }
+    } catch (error) {
+      console.error('❌ Network error sending data to Zapier:', error);
+      console.error('❌ Error type:', error.name);
+      console.error('❌ Error message:', error.message);
+      
+      // If FormData failed with CORS, try URL-encoded as fallback
+      if (error.message.includes('fetch') || error.message.includes('CORS')) {
+        console.log('🔄 CORS error detected. Trying URL-encoded method...');
+        try {
+          const fallbackResponse = await fetch(ZAPIER_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: urlEncodedData
+          });
+          
+          if (fallbackResponse.ok) {
+            const fallbackResult = await fallbackResponse.text();
+            console.log('✅ Fallback method (URL-encoded) succeeded!');
+            return { success: true, response: fallbackResult, method: 'url-encoded' };
+          }
+        } catch (fallbackError) {
+          console.error('❌ Fallback method also failed:', fallbackError);
+        }
+      }
+      
+      return { success: false, error: error.message };
+    }
+  }
+
   // Function to collect all survey data and send to Google Sheets
   async function submitToGoogleSheets(selectedPlan) {
     // Get all stored data
@@ -407,18 +577,75 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         console.error('Error submitting data:', response.statusText);
       }
-      
-      // Clear localStorage after submission attempt
-      localStorage.removeItem('surveyData');
-      
-      // Navigate to send.html
-      window.location.href = "send.html";
     } catch (error) {
       console.error('Error submitting data:', error);
-      // Still navigate even if there's an error
-      localStorage.removeItem('surveyData');
-      window.location.href = "send.html";
     }
+  }
+
+  // Combined submission function - sends to both Google Sheets and Zapier
+  async function submitSurveyData(selectedPlan) {
+    console.log('🎯 Starting survey data submission...');
+    console.log('📋 Selected plan:', selectedPlan);
+    
+    // Validate that we have required data (email and name)
+    const storedData = localStorage.getItem('surveyData');
+    if (!storedData) {
+      console.error('❌ No survey data found in localStorage!');
+      alert('Error: No survey data found. Please complete the survey again.');
+      return;
+    }
+
+    let allData;
+    try {
+      allData = JSON.parse(storedData);
+      console.log('✅ Survey data loaded:', allData);
+    } catch (error) {
+      console.error('❌ Error parsing survey data:', error);
+      alert('Error: Invalid survey data. Please complete the survey again.');
+      return;
+    }
+
+    if (!allData.email || !allData.firstName) {
+      console.error('❌ Missing required fields!');
+      console.error('   Email:', allData.email);
+      console.error('   First Name:', allData.firstName);
+      console.error('   Full data:', allData);
+      alert('Error: Missing email or name. Please complete all survey fields.');
+      return;
+    }
+
+    console.log('✅ Required fields present:');
+    console.log('   Email:', allData.email);
+    console.log('   First Name:', allData.firstName);
+
+    // Send to both services in parallel
+    console.log('📤 Sending data to Google Sheets and Zapier...');
+    const results = await Promise.allSettled([
+      submitToGoogleSheets(selectedPlan),
+      submitToZapier(selectedPlan)
+    ]);
+
+    // Log results
+    console.log('📊 Submission results:');
+    results.forEach((result, index) => {
+      const service = index === 0 ? 'Google Sheets' : 'Zapier';
+      if (result.status === 'fulfilled') {
+        console.log(`✅ ${service}:`, result.value);
+      } else {
+        console.error(`❌ ${service} failed:`, result.reason);
+      }
+    });
+
+    // Clear localStorage after submission attempt
+    localStorage.removeItem('surveyData');
+    console.log('🧹 Cleared localStorage');
+    
+    // Add a small delay to ensure requests complete before navigation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Navigate to send.html
+    console.log('➡️ Navigating to success page...');
+    window.location.href = "send.html";
   }
 
   // Function to select premium plan
@@ -444,8 +671,8 @@ document.addEventListener("DOMContentLoaded", () => {
       premiumCard.style.borderColor = "#BE5103";
     }
 
-    // Submit data to Google Sheets
-    submitToGoogleSheets('Premium');
+    // Submit data to both Google Sheets and Zapier (triggers Hireflix)
+    submitSurveyData('Premium');
   }
 
   // Function to select basic plan
@@ -471,8 +698,8 @@ document.addEventListener("DOMContentLoaded", () => {
       basicCard.style.borderColor = "#BE5103";
     }
 
-    // Submit data to Google Sheets
-    submitToGoogleSheets('Basic');
+    // Submit data to both Google Sheets and Zapier (triggers Hireflix)
+    submitSurveyData('Basic');
   }
 
   // Function to select concierge plan
@@ -498,8 +725,8 @@ document.addEventListener("DOMContentLoaded", () => {
       conciergeCard.style.borderColor = "#BE5103";
     }
 
-    // Submit data to Google Sheets
-    submitToGoogleSheets('Concierge');
+    // Submit data to both Google Sheets and Zapier (triggers Hireflix)
+    submitSurveyData('Concierge');
   }
 
   // Add event listeners to premium buttons
