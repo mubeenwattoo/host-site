@@ -257,10 +257,13 @@
                 </div>
 
                 <div class="grid lg:grid-cols-3  gap-4 mt-6 gender-row">
-                    <input id="zipCodeInput" type="number" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
-                        class="input-field pt-0  p-3 text-[20px] lg:placeholder:text-[20px] lg:full w-[80%] mx-auto
+                    <div class="flex flex-col w-[80%] mx-auto lg:w-full">
+                        <input id="zipCodeInput" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
+                            class="input-field zip-code-input pt-0  p-3 text-[20px] lg:placeholder:text-[20px] lg:full w-full
          placeholder:text-[16px] font-[400] text-center lg:pb-2 pb-4 whitespace-normal placeholder:whitespace-normal
                border-b border-[#675F57] focus:outline-0 focus:border-[#795634] text-[#4A4A4A] placeholder-[rgba(103,95,87,0.30)]" placeholder="Zip code">
+                        <div id="zipCodeError" class="error-message hidden text-red-600 text-[14px] mt-1 text-center">Please correct zip code</div>
+                    </div>
                     <input type="text"
                         class="input-field lg:col-span-2 pt-0  p-3 text-[20px] lg:placeholder:text-[20px] lg:w-full w-[80%] mx-auto
          placeholder:text-[16px] font-[400] text-center lg:pb-2 pb-4 whitespace-normal placeholder:whitespace-normal
@@ -282,11 +285,14 @@
          placeholder:text-[16px] font-[400] text-center lg:pb-2 pb-4 whitespace-normal placeholder:whitespace-normal
                border-b border-[#675F57] focus:outline-0 focus:border-[#795634] text-[#4A4A4A] placeholder-[rgba(103,95,87,0.30)]"
                         placeholder="First Name">
-                    <input type="email"
-                        class="input-field  pt-0  p-3 text-[20px] lg:placeholder:text-[20px] lg:w-full w-[80%] mx-auto
+                    <div class="flex flex-col w-[80%] mx-auto lg:w-full">
+                        <input id="emailInput" type="email"
+                            class="input-field email-input pt-0  p-3 text-[20px] lg:placeholder:text-[20px] lg:w-full w-full
          placeholder:text-[16px] font-[400] text-center lg:pb-2 pb-4 whitespace-normal placeholder:whitespace-normal
                border-b border-[#675F57] focus:outline-0 focus:border-[#795634] text-[#4A4A4A] placeholder-[rgba(103,95,87,0.30)]"
-                        placeholder="Email">
+                            placeholder="Email">
+                        <div id="emailError" class="error-message hidden text-red-600 text-[14px] mt-1 text-center">Please enter a valid email address</div>
+                    </div>
 
 
 
@@ -342,8 +348,52 @@
    
 <script>
     // =============================
-    // VALIDATION LOGIC ONLY
+    // VALIDATION LOGIC
     // =============================
+
+    // Validate zip code (must be exactly 5 digits, no letters)
+    function validateZipCode(zipCode) {
+        if (!zipCode || zipCode.trim() === '') {
+            return false;
+        }
+        // Must be exactly 5 digits, no letters
+        const zipRegex = /^\d{5}$/;
+        return zipRegex.test(zipCode.trim());
+    }
+
+    // Validate email (must be valid email format)
+    function validateEmail(email) {
+        if (!email || email.trim() === '') {
+            return false;
+        }
+        // Standard email regex pattern
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email.trim());
+    }
+
+    // Show error message
+    function showError(errorElementId, show = true) {
+        const errorElement = document.getElementById(errorElementId);
+        if (errorElement) {
+            if (show) {
+                errorElement.classList.remove('hidden');
+            } else {
+                errorElement.classList.add('hidden');
+            }
+        }
+    }
+
+    // Update input border color based on validation
+    function updateInputBorder(inputElement, isValid) {
+        if (!inputElement) return;
+        if (isValid) {
+            inputElement.classList.remove('border-red-600');
+            inputElement.classList.add('border-[#675F57]');
+        } else {
+            inputElement.classList.remove('border-[#675F57]');
+            inputElement.classList.add('border-red-600');
+        }
+    }
 
     function checkFormValidity() {
         const continueBtn = document.getElementById("continueBtn");
@@ -355,14 +405,51 @@
             d.textContent.trim() !== "Select"
         );
 
-        // Check all input fields (must not be empty)
-        const inputFields = document.querySelectorAll(".input-field");
-        const allInputsFilled = Array.from(inputFields).every(inp =>
+        // Get zip code and email inputs
+        const zipCodeInput = document.getElementById("zipCodeInput");
+        const emailInput = document.getElementById("emailInput");
+        
+        // Validate zip code
+        let zipCodeValid = false;
+        if (zipCodeInput) {
+            const zipValue = zipCodeInput.value.trim();
+            zipCodeValid = validateZipCode(zipValue);
+            if (zipValue !== '') {
+                showError('zipCodeError', !zipCodeValid);
+                updateInputBorder(zipCodeInput, zipCodeValid);
+            } else {
+                showError('zipCodeError', false);
+                updateInputBorder(zipCodeInput, true);
+            }
+        }
+
+        // Validate email
+        let emailValid = false;
+        if (emailInput) {
+            const emailValue = emailInput.value.trim();
+            emailValid = validateEmail(emailValue);
+            if (emailValue !== '') {
+                showError('emailError', !emailValid);
+                updateInputBorder(emailInput, emailValid);
+            } else {
+                showError('emailError', false);
+                updateInputBorder(emailInput, true);
+            }
+        }
+
+        // Check all other input fields (must not be empty)
+        const otherInputs = document.querySelectorAll(".input-field:not(#zipCodeInput):not(#emailInput)");
+        const allOtherInputsFilled = Array.from(otherInputs).every(inp =>
             inp.value.trim() !== ""
         );
 
-        // Enable button if valid
-        if (allDropdownsSelected && allInputsFilled) {
+        // Enable button only if all validations pass
+        const isFormValid = allDropdownsSelected && 
+                           allOtherInputsFilled && 
+                           zipCodeValid && 
+                           emailValid;
+
+        if (isFormValid) {
             continueBtn.classList.remove("opacity-30", "cursor-not-allowed");
             continueBtn.classList.add("opacity-100", "cursor-pointer");
         } else {
@@ -374,6 +461,7 @@
     // Trigger validation when typing in inputs
     document.querySelectorAll(".input-field").forEach(inp => {
         inp.addEventListener("input", checkFormValidity);
+        inp.addEventListener("blur", checkFormValidity); // Also validate on blur
     });
 
     // Trigger validation on page load
@@ -381,29 +469,53 @@
         checkFormValidity();
     });
 
-
+    // =============================
+    // ZIP CODE INPUT HANDLING
     // =============================
 
     const zipCode = document.getElementById("zipCodeInput");
-  if (zipCode) {
-    zipCode.addEventListener('input', (e) => {
-      // Remove any non-digit characters
-      e.target.value = e.target.value.replace(/\D/g, '');
-      // Limit to 5 digits
-      if (e.target.value.length > 5) {
-        e.target.value = e.target.value.slice(0, 5);
-      }
-      checkFormValidity();
-    });
-    
-    zipCode.addEventListener('paste', (e) => {
-      e.preventDefault();
-      const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-      const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 5);
-      e.target.value = digitsOnly;
-      checkFormValidity();
-    });
-  }
+    if (zipCode) {
+        zipCode.addEventListener('input', (e) => {
+            // Remove any non-digit characters
+            e.target.value = e.target.value.replace(/\D/g, '');
+            // Limit to 5 digits
+            if (e.target.value.length > 5) {
+                e.target.value = e.target.value.slice(0, 5);
+            }
+            checkFormValidity();
+        });
+        
+        zipCode.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 5);
+            e.target.value = digitsOnly;
+            checkFormValidity();
+        });
+
+        zipCode.addEventListener('blur', () => {
+            const zipValue = zipCode.value.trim();
+            if (zipValue !== '' && !validateZipCode(zipValue)) {
+                showError('zipCodeError', true);
+                updateInputBorder(zipCode, false);
+            }
+        });
+    }
+
+    // =============================
+    // EMAIL INPUT HANDLING
+    // =============================
+
+    const emailInput = document.getElementById("emailInput");
+    if (emailInput) {
+        emailInput.addEventListener('blur', () => {
+            const emailValue = emailInput.value.trim();
+            if (emailValue !== '' && !validateEmail(emailValue)) {
+                showError('emailError', true);
+                updateInputBorder(emailInput, false);
+            }
+        });
+    }
     // Function to collect and save data
     function savePage3Data() {
         // Get existing data or create new object
@@ -460,6 +572,38 @@
 
     continueBtn.addEventListener("click", (e) => {
         if (continueBtn.classList.contains("opacity-30")) {
+            e.preventDefault();
+            return;
+        }
+
+        // Final validation before submission
+        const zipCodeInput = document.getElementById("zipCodeInput");
+        const emailInput = document.getElementById("emailInput");
+        
+        let isValid = true;
+        
+        // Validate zip code
+        if (zipCodeInput) {
+            const zipValue = zipCodeInput.value.trim();
+            if (!validateZipCode(zipValue)) {
+                showError('zipCodeError', true);
+                updateInputBorder(zipCodeInput, false);
+                isValid = false;
+            }
+        }
+        
+        // Validate email
+        if (emailInput) {
+            const emailValue = emailInput.value.trim();
+            if (!validateEmail(emailValue)) {
+                showError('emailError', true);
+                updateInputBorder(emailInput, false);
+                isValid = false;
+            }
+        }
+        
+        // Prevent navigation if validation fails
+        if (!isValid) {
             e.preventDefault();
             return;
         }
