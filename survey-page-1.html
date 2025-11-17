@@ -12,10 +12,7 @@
 
 
     <title>Guest Survey Page 1</title>
-
-<!-- Contentsquare (Hotjar) Tracking Code -->
 <script src="https://t.contentsquare.net/uxa/ce07a67e879d5.js"></script>
-<!-- End Contentsquare Tracking Code -->
 </head>
 
 <body class="font-[lexend]">
@@ -25,24 +22,16 @@
         <div class="flex items-start gap-6">
              <a href="./" class="inline-flex"><img src="./assets/images/logo.png" alt="logo"
                 class="lg:w-[124px] lg:h-[48px] w-[82px] h-[32px] "></a>
-
                 <div class="flex flex-col items-center lg:ml-0 -ml-16 w-full">
              <h2 class="text-[#5B7B5A] lg:text-[48px] text-[24px] font-[500]  lg:-mt-4 mt-12 text-center">Tell Us About Your
             Needs</h2>
-        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-2 mb-6">Let’s make your every day easier
+        <h6 class="text-center lg:text-[24px] text-[20px] text-[#675F57] lg:mb-2 mb-6">Let's make your every day easier
         </h6>
         </div>
         </div>
-       
-
-
-       
 
         <div class=" mx-auto grid lg:grid-cols-[320px_1fr] items-center gap-16">
-
             <div class="lg:flex hidden flex-col gap-8">
-
-                <!-- Step 1 -->
                 <div class="flex flex-col items-start  gap-3 p-6 rounded-[14px] border-[2px] border-[var(--Color-Green,#5B7B5A)]
   bg-[var(--Color-Light-Green,#D9E1CE)] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),_0_8px_10px_-6px_rgba(0,0,0,0.10)] ">
                     <span
@@ -85,15 +74,9 @@
                     <p class="text-[#675F57] text-[16px] font-[400]">Meet your selected candidates, review their
                         references and background checks</p>
                 </div>
-
-
-
             </div>
 
             <div>
-
-
-
                 <div>
 
 
@@ -122,8 +105,6 @@
           rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Elder Care</button>
                         <button id="otherBtn" data-pill class="pill border border-[#675F57] lg:px-8 px-4  py-[10px] 
           rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Other</button>
-
-
                     </div>
 
                 </div>
@@ -139,43 +120,26 @@
           rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">Less than 6 months</button>
                     <button data-pill class="pill border border-[#675F57] lg:px-8 px-4  py-[10px] 
           rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">More than 6 months</button>
-
-
-
                 </div>
-
-                <!-- BUTTON -->
                 <div class="lg:mt-16  mx-auto relative flex flex-col gap-8 items-center justify-center">
-
-
                     <button id="continueBtn"
                         class="cursor-not-allowed duration-300 opacity-30  lg:text-[24px] text-[16px] font-[500] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.10),_0_4px_6px_-4px_rgba(0,0,0,0.10)] lg:w-[560px] w-[85%] mx-auto flex items-center justify-center lg:mx-0 lg:mt-0 mt-10 bg-[#BE5103]  text-white  px-4 py-3 rounded-full ">
                         Continue
-
                     </button>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-[96px] h-[8px] bg-[#5B7B5A] rounded-full"></div>
                         <div class="w-[8px] h-[8px] bg-[rgba(125,122,116,0.50)] rounded-full"></div>
                         <div class="w-[8px] h-[8px] bg-[rgba(125,122,116,0.50)] rounded-full"></div>
-
-
                     </div>
                 </div>
-
             </div>
         </div>
         </div>
     </section>
-
-
-
-
     <footer class="w-full bg-[#2E2E2E] pt-[42px] pb-[32px] lg:px-[64px] px-[24px]">
         <div class="w-full mx-auto text-center">
 
             <img src="./assets/images/logo.png" alt="logo" class="lg:w-[124px] lg:h-[48px] w-[82px] h-[32px] mx-auto ">
-
-
             <hr class="border-[#7D7A74] lg:mb-12 mb-6 lg:mt-10 mt-5">
 
             <p class="text-[#7D7A74] text-[16px] font-[400]">
@@ -183,13 +147,7 @@
             </p>
         </div>
     </footer>
-
-
-    <!-- ======================= JS FOR THE PILLS ======================= -->
-
-
     <script>
-        // Toggle UI style for each pill
         document.querySelectorAll("[data-pill]").forEach(pill => {
             pill.addEventListener("click", () => {
                 pill.classList.toggle("bg-[#675F57]");
@@ -199,29 +157,21 @@
                 checkFormValidity();
             });
         });
-
-        // Check validity for both rows
         function checkFormValidity() {
             const continueBtn = document.getElementById("continueBtn");
             if (!continueBtn) return;
-
-            // Row 1 → "Select all services that apply to your needs"
             const servicesRow = Array.from(
                 document.querySelectorAll(".services-row [data-pill]")
             );
             const servicesSelected = servicesRow.some(
                 pill => pill.classList.contains("bg-[#675F57]")
             );
-
-            // Row 2 → "How long do you need help?"
             const helpRow = Array.from(
                 document.querySelectorAll(".duration-row [data-pill]")
             );
             const durationSelected = helpRow.some(
                 pill => pill.classList.contains("bg-[#675F57]")
             );
-
-            // Activate button only when BOTH have a selected pill
             if (servicesSelected && durationSelected) {
                 continueBtn.classList.remove("opacity-30", "cursor-not-allowed");
                 continueBtn.classList.add("opacity-100", "cursor-pointer");
@@ -230,15 +180,11 @@
                 continueBtn.classList.add("opacity-30", "cursor-not-allowed");
             }
         }
-
-        // Function to collect and save data
         function savePage1Data() {
             const data = {
                 page: 'survey-page-1',
                 timestamp: new Date().toISOString()
             };
-
-            // Collect selected services
             const servicesRow = Array.from(
                 document.querySelectorAll(".services-row [data-pill]")
             );
@@ -246,8 +192,6 @@
                 .filter(pill => pill.classList.contains("bg-[#675F57]"))
                 .map(pill => pill.textContent.trim());
             data.services = selectedServices;
-
-            // Collect selected duration
             const durationRow = Array.from(
                 document.querySelectorAll(".duration-row [data-pill]")
             );
@@ -255,20 +199,14 @@
                 .filter(pill => pill.classList.contains("bg-[#675F57]"))
                 .map(pill => pill.textContent.trim())[0] || '';
             data.duration = selectedDuration;
-
-            // Save to localStorage
             localStorage.setItem('surveyData', JSON.stringify(data));
         }
-
-        // Disable navigation unless active
         const continueBtn = document.getElementById("continueBtn");
         continueBtn.addEventListener("click", (e) => {
             if (continueBtn.classList.contains("opacity-30")) {
                 e.preventDefault();
                 return;
             }
-            
-            // Save data before navigating
             savePage1Data();
             window.location.href = "survey-page-2.html";
         });
