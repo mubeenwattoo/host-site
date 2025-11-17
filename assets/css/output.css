@@ -249,9 +249,6 @@
   .-ml-16 {
     margin-left: calc(var(--spacing) * -16);
   }
-  .contents {
-    display: contents;
-  }
   .flex {
     display: flex;
   }
@@ -355,6 +352,9 @@
   }
   .max-w-6xl {
     max-width: var(--container-6xl);
+  }
+  .max-w-\[1440px\] {
+    max-width: 1440px;
   }
   .cursor-not-allowed {
     cursor: not-allowed;
