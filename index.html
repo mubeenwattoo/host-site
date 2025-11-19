@@ -4,6 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+  if (window.location.hostname.includes("nesthelpers.com")) {
+    document.write('<base href="/helpers/">');
+  }
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="./assets/css/output.css" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,11 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
 <title>Host Landing Page</title>
 <script src="https://t.contentsquare.net/uxa/ce07a67e879d5.js"></script>
- <script>
-  if (window.location.hostname.includes("nesthelpers.com")) {
-    document.write('<base href="/helpers/">');
-  }
-</script>
+ 
 </head>
 <body class="font-[lexend]">
 
