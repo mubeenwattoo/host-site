@@ -2,6 +2,14 @@
 <html>
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6ZY1KSD55X"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6ZY1KSD55X');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -297,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Function to submit all collected data to Google Sheet
+  // Function to submit/update all collected data to Google Sheet
   function submitAllData(planType) {
     // Get all collected data from localStorage
     const allData = JSON.parse(localStorage.getItem('surveyData') || '{}');
@@ -314,20 +322,66 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add plan selection
     allData['data[Plan]'] = planType;
     
-    // Convert to FormData
-    const formData = new FormData();
-    for (const [key, value] of Object.entries(allData)) {
-      formData.append(key, value);
+    const sheetDbUrl = 'https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1';
+    
+    // Get session ID if available
+    const sessionId = localStorage.getItem('surveySessionId');
+    const dataToSubmit = { ...allData };
+    if (sessionId) {
+      dataToSubmit['data[SessionId]'] = sessionId;
     }
     
-    // Fire-and-forget submission - don't wait for response
-    // This makes the redirect instant with zero delay
-    fetch('https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1', {
+    // Convert to FormData - ensure all data fields are included
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(dataToSubmit)) {
+      if (key.startsWith('data[')) {
+        // Ensure value is a string and not empty
+        if (value !== null && value !== undefined) {
+          formData.append(key, String(value));
+        }
+      }
+    }
+    
+    // Always POST the complete data first (ensures data is saved)
+    // This is the reliable method that we know works
+    fetch(sheetDbUrl, {
       method: 'POST',
       body: formData,
-      keepalive: true // Ensures request completes even if page unloads
+      keepalive: true
+    }).then(() => {
+      // After successful POST, try to update existing row by email if available
+      if (email) {
+        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+      
+      // Also try to update by SessionId if available
+      if (sessionId) {
+        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
     }).catch(() => {
-      // Silently handle errors - data will submit in background
+      // If POST fails, still try PATCH as fallback
+      if (email) {
+        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+      if (sessionId) {
+        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
     });
     
     // Clear survey data but keep hireflixData for send.html

@@ -2,6 +2,14 @@
 <html>
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6ZY1KSD55X"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6ZY1KSD55X');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -457,6 +465,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Function to submit/update data to Google Sheets immediately
+  function submitToSheet(data, email = null) {
+    const sheetDbUrl = 'https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1';
+    
+    // Use email as identifier if available
+    if (!email) {
+      email = data['data[Email]'] || null;
+    }
+    
+    // Get session ID from localStorage (if exists from page 1)
+    const sessionId = localStorage.getItem('surveySessionId');
+    
+    // Add SessionId to data if we have it (to help with row matching)
+    const dataToSubmit = { ...data };
+    if (sessionId) {
+      dataToSubmit['data[SessionId]'] = sessionId;
+    }
+    
+    // Convert to FormData - ensure all data fields are included
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(dataToSubmit)) {
+      if (key.startsWith('data[')) {
+        // Ensure value is a string and not empty
+        if (value !== null && value !== undefined) {
+          formData.append(key, String(value));
+        }
+      }
+    }
+    
+    // Always POST the complete merged data (this is the reliable method)
+    // This ensures data is saved immediately
+    fetch(sheetDbUrl, {
+      method: 'POST',
+      body: formData,
+      keepalive: true
+    }).then(() => {
+      // After successful POST, try to update existing row by SessionId if available
+      // This helps merge page 1 and page 7 data in the same row
+      if (sessionId) {
+        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+      
+      // Also try to update by email if available
+      if (email) {
+        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+    }).catch(() => {
+      // If POST fails, still try PATCH as fallback
+      if (sessionId) {
+        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+      if (email) {
+        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
+          method: 'PATCH',
+          body: formData,
+          keepalive: true
+        }).catch(() => {});
+      }
+    });
+  }
+
   // Handle form submission
   const form = document.getElementById("surveyForm7");
   form.addEventListener("submit", (e) => {
@@ -513,6 +594,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Store merged data in localStorage
     localStorage.setItem('surveyData', JSON.stringify(allData));
+
+    // Submit all data immediately to Google Sheets using email as identifier (fire-and-forget)
+    submitToSheet(allData, email);
 
     // Immediately redirect - zero delay
     window.location.href = "guest-pricing-page.html";

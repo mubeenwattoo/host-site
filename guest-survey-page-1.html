@@ -2,6 +2,14 @@
 <html>
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6ZY1KSD55X"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6ZY1KSD55X');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -679,6 +687,44 @@ document.addEventListener("DOMContentLoaded", () => {
   ====================== */
  
 
+  // Generate or retrieve session ID
+  function getSessionId() {
+    let sessionId = localStorage.getItem('surveySessionId');
+    if (!sessionId) {
+      // Generate a unique session ID
+      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('surveySessionId', sessionId);
+    }
+    return sessionId;
+  }
+
+  // Function to submit data to Google Sheets immediately
+  function submitToSheet(data) {
+    const sheetDbUrl = 'https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1';
+    
+    // Add session ID to data for tracking
+    const sessionId = getSessionId();
+    const dataToSubmit = { ...data };
+    dataToSubmit['data[SessionId]'] = sessionId;
+    
+    // Convert to FormData
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(dataToSubmit)) {
+      if (key.startsWith('data[')) {
+        formData.append(key, value);
+      }
+    }
+    
+    // Create new row (fire-and-forget, no delay)
+    // Since we don't have email yet, we'll always create a new row
+    // When email becomes available on page 7, it will update this row
+    fetch(sheetDbUrl, {
+      method: 'POST',
+      body: formData,
+      keepalive: true
+    }).catch(() => {});
+  }
+
   const continueBtn = document.getElementById("continueBtn");
   const form = document.getElementById("surveyForm");
 
@@ -709,6 +755,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Store page 1 data in localStorage
     localStorage.setItem('surveyData', JSON.stringify(page1Data));
+
+    // Submit page 1 data immediately to Google Sheets (fire-and-forget)
+    submitToSheet(page1Data);
 
     // Immediately redirect - zero delay
     window.location.href = "guest-survey-page-7.html";
