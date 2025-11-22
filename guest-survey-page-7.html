@@ -95,7 +95,7 @@
     </div>
 
     <div>
-      <form id="surveyForm7" action="https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1" method="post">
+      <form id="surveyForm7" method="post">
       <div class="flex flex-col lg:gap-10 gap-6">
 <div class="flex items-center gap-6  w-full">
 <div x-data="{ on: false }" class="select-none cursor-pointer" data-toggle-id="pets-children">
@@ -459,13 +459,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('[x-data*="on"]').forEach(toggleContainer => {
       const hiddenInput = toggleContainer.querySelector('input[type="hidden"]');
       if (hiddenInput) {
+        let valueSet = false;
+        
         // Method 1: Try to get Alpine.js data directly
         try {
           if (window.Alpine && Alpine.$data) {
             const alpineData = Alpine.$data(toggleContainer);
             if (alpineData && typeof alpineData.on !== 'undefined') {
               hiddenInput.value = alpineData.on ? 'Yes' : 'No';
-              return;
+              valueSet = true;
             }
           }
         } catch (e) {
@@ -473,18 +475,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         // Method 2: Check the toggle state visually (reliable fallback)
-        const toggleDiv = toggleContainer.querySelector('div[class*="bg-"]');
-        if (toggleDiv) {
-          const isOn = toggleDiv.classList.contains('bg-[#675F57]');
-          hiddenInput.value = isOn ? 'Yes' : 'No';
+        if (!valueSet) {
+          const toggleDiv = toggleContainer.querySelector('div[class*="bg-"]');
+          if (toggleDiv) {
+            const isOn = toggleDiv.classList.contains('bg-[#675F57]');
+            hiddenInput.value = isOn ? 'Yes' : 'No';
+            valueSet = true;
+          }
+        }
+        
+        // Method 3: Default to "No" if still not set
+        if (!valueSet || !hiddenInput.value) {
+          hiddenInput.value = 'No';
         }
       }
     });
   }
 
-  // Function to submit/update data to Google Sheets immediately
-  function submitToSheet(data, email = null) {
-    const sheetDbUrl = 'https://sheetdb.io/api/v1/7gh9xr3tsluqb?sheet=Sheet1';
+  // Function to submit/update data to Airtable immediately
+  function submitToAirtable(data, email = null) {
+    // Airtable API configuration
+    const AIRTABLE_BASE_ID = 'appmdc27WmH4DfYcm';
+    const AIRTABLE_TABLE_NAME = 'Helpers';
+    const AIRTABLE_API_KEY = 'patJhPHpdtzafBrO3.9ba453f10d0deb3606bbb6872ebabf42e32d912913b97611f2e826c277ed3b78';
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
     
     // Use email as identifier if available
     if (!email) {
@@ -494,65 +508,439 @@ document.addEventListener("DOMContentLoaded", () => {
     // Get session ID from localStorage (if exists from page 1)
     const sessionId = localStorage.getItem('surveySessionId');
     
-    // Add SessionId to data if we have it (to help with row matching)
-    const dataToSubmit = { ...data };
-    if (sessionId) {
-      dataToSubmit['data[SessionId]'] = sessionId;
-    }
+    // Log the raw data received
+    console.log('🔍 Page 7 - Raw data received:', data);
+    console.log('🔍 Page 7 - Data keys:', Object.keys(data));
     
-    // Convert to FormData - ensure all data fields are included
-    const formData = new FormData();
-    for (const [key, value] of Object.entries(dataToSubmit)) {
-      if (key.startsWith('data[')) {
-        // Ensure value is a string and not empty
-        if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
+    // Map form data to Airtable field names
+    const fields = {};
+    
+    // Helper function to safely get and convert field value
+    // Only return value if it's not empty and not "Not Selected Yet"
+    function getFieldValue(key) {
+      const value = data[key];
+      if (value !== undefined && value !== null && value !== '') {
+        const strValue = String(value).trim();
+        // Don't update if value is "Not Selected Yet" (keep existing value in Airtable)
+        if (strValue !== 'Not Selected Yet' && strValue !== '') {
+          return strValue;
         }
       }
+      return null;
     }
     
-    // Always POST the complete merged data (this is the reliable method)
-    // This ensures data is saved immediately
-    fetch(sheetDbUrl, {
-      method: 'POST',
-      body: formData,
-      keepalive: true
-    }).then(() => {
-      // After successful POST, try to update existing row by SessionId if available
-      // This helps merge page 1 and page 7 data in the same row
-      if (sessionId) {
-        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
-          method: 'PATCH',
-          body: formData,
-          keepalive: true
-        }).catch(() => {});
-      }
+    // Field mapping from form data[FieldName] to Airtable field names
+    // Only update fields that have actual values (not "Not Selected Yet")
+    const duration = getFieldValue('data[Duration]');
+    if (duration) fields['Duration'] = duration;
+    
+    const study = getFieldValue('data[Study]');
+    if (study) fields['Study'] = study;
+    
+    const age = getFieldValue('data[Age]');
+    if (age) fields['Age'] = age;
+    
+    const gender = getFieldValue('data[Gender]');
+    if (gender) fields['Gender'] = gender;
+    
+    const local = getFieldValue('data[Local]');
+    if (local) fields['Local'] = local; // Long text
+    
+    const helpArea = getFieldValue('data[HelpArea]');
+    if (helpArea) fields['HelpArea'] = helpArea; // Long text
+    
+    // Toggle switches - only update if they have actual values (Yes/No)
+    const pets = getFieldValue('data[Pets]');
+    if (pets && (pets === 'Yes' || pets === 'No')) {
+      fields['Pets'] = pets;
+    }
+    
+    const contribute = getFieldValue('data[Contribute]');
+    if (contribute && (contribute === 'Yes' || contribute === 'No')) {
+      fields['Contribute'] = contribute;
+    }
+    
+    const car = getFieldValue('data[Car]');
+    if (car && (car === 'Yes' || car === 'No')) {
+      fields['Car'] = car;
+    }
+    
+    const reference = getFieldValue('data[Reference]');
+    if (reference && (reference === 'Yes' || reference === 'No')) {
+      fields['Reference'] = reference;
+    }
+    
+    const degree = getFieldValue('data[Degree]');
+    if (degree && (degree === 'Yes' || degree === 'No')) {
+      fields['Degree'] = degree;
+    }
+    
+    const zipCode = getFieldValue('data[Zip]');
+    if (zipCode) fields['ZipCode'] = zipCode;
+    
+    const name = getFieldValue('data[Name]');
+    if (name) fields['Name'] = name;
+    
+    const emailValue = getFieldValue('data[Email]');
+    if (emailValue) fields['Email'] = emailValue;
+    
+    const selectedPlan = getFieldValue('data[Selected Plan]');
+    if (selectedPlan) fields['Selected Plan'] = selectedPlan;
+    
+    // Note: Session Id is autonumber in Airtable, so we don't set it here
+    // It will be auto-generated by Airtable when the record is created
+    
+    // Prepare Airtable record payload
+    const payload = {
+      fields: fields
+    };
+    
+    const headers = {
+      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+      'Content-Type': 'application/json'
+    };
+    
+    // Function to find existing record - prioritize stored record ID from page 1
+    function findExistingRecord(callback) {
+      // First, try to use the record ID stored from page 1
+      const storedRecordId = localStorage.getItem('airtableRecordId');
+      console.log('🔍 Page 7 - Checking for stored record ID:', storedRecordId);
       
-      // Also try to update by email if available
-      if (email) {
-        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
-          method: 'PATCH',
-          body: formData,
+      if (storedRecordId) {
+        console.log('🔍 Page 7 - Using stored record ID from page 1:', storedRecordId);
+        // Verify the record still exists
+        fetch(`${airtableUrl}/${storedRecordId}`, {
+          method: 'GET',
+          headers: headers,
           keepalive: true
-        }).catch(() => {});
+        })
+        .then(response => {
+          console.log('📡 Page 7 - Stored ID verification response:', response.status, response.statusText);
+          if (response.ok) {
+            return response.json();
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        })
+        .then(record => {
+          console.log('✅ Page 7 - Stored record ID is valid:', storedRecordId);
+          console.log('📋 Stored record data:', record);
+          callback(storedRecordId);
+        })
+        .catch((error) => {
+          console.log('⚠️ Page 7 - Stored record ID verification failed:', error);
+          console.log('⚠️ Page 7 - Trying other methods...');
+          findRecordByOtherMethods(callback);
+        });
+      } else {
+        console.log('⚠️ Page 7 - No stored record ID found in localStorage');
+        console.log('⚠️ Page 7 - Available localStorage keys:', Object.keys(localStorage));
+        // No stored ID, try other methods
+        findRecordByOtherMethods(callback);
       }
-    }).catch(() => {
-      // If POST fails, still try PATCH as fallback
-      if (sessionId) {
-        fetch(`${sheetDbUrl}/SessionId/${encodeURIComponent(sessionId)}`, {
-          method: 'PATCH',
-          body: formData,
-          keepalive: true
-        }).catch(() => {});
-      }
+    }
+    
+    // Helper function to find record by email or page 1 data
+    function findRecordByOtherMethods(callback) {
+      // First, try to find by email if available
       if (email) {
-        fetch(`${sheetDbUrl}/Email/${encodeURIComponent(email)}`, {
-          method: 'PATCH',
-          body: formData,
+        const filterFormula = `{Email} = "${email}"`;
+        fetch(`${airtableUrl}?filterByFormula=${encodeURIComponent(filterFormula)}`, {
+          method: 'GET',
+          headers: headers,
           keepalive: true
-        }).catch(() => {});
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            console.log('✅ Found record by email:', result.records[0].id);
+            // Store this ID for future use
+            localStorage.setItem('airtableRecordId', result.records[0].id);
+            callback(result.records[0].id);
+          } else {
+            // Email not found, try to find by matching page 1 data (record without email)
+            console.log('🔍 Email not found, trying to find record by page 1 data...');
+            findRecordByPage1Data(callback);
+          }
+        })
+        .catch((error) => {
+          console.error('❌ Error finding record by email:', error);
+          // Try to find by page 1 data as fallback
+          findRecordByPage1Data(callback);
+        });
+      } else {
+        // No email, try to find by page 1 data
+        findRecordByPage1Data(callback);
+      }
+    }
+    
+    // Helper function to find record by matching page 1 data
+    function findRecordByPage1Data(callback) {
+      const duration = data['data[Duration]'] || '';
+      const study = data['data[Study]'] || '';
+      const age = data['data[Age]'] || '';
+      const gender = data['data[Gender]'] || '';
+      
+      console.log('🔍 Page 7 - Searching by page 1 data:', { duration, study, age, gender });
+      
+      // Only try to match if we have enough data from page 1
+      if (duration && study && age && gender) {
+        // First try: Find record matching these exact fields
+        // Escape special characters in values for Airtable formula
+        const escapeValue = (val) => val.replace(/"/g, '\\"');
+        const matchFormula1 = `AND({Duration} = "${escapeValue(duration)}", {Study} = "${escapeValue(study)}", {Age} = "${escapeValue(age)}", {Gender} = "${escapeValue(gender)}")`;
+        
+        console.log('🔍 Page 7 - Trying match formula 1:', matchFormula1);
+        
+        fetch(`${airtableUrl}?filterByFormula=${encodeURIComponent(matchFormula1)}&maxRecords=1&sort[0][field]=Session Id&sort[0][direction]=desc`, {
+          method: 'GET',
+          headers: headers,
+          keepalive: true
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            console.log('✅ Found record by page 1 data (method 1):', result.records[0].id);
+            // Store this ID for future use
+            localStorage.setItem('airtableRecordId', result.records[0].id);
+            callback(result.records[0].id);
+          } else {
+            // Try method 2: Find most recent record with matching Duration and Study
+            console.log('🔍 Method 1 failed, trying method 2...');
+            const matchFormula2 = `AND({Duration} = "${duration}", {Study} = "${study}")`;
+            return fetch(`${airtableUrl}?filterByFormula=${encodeURIComponent(matchFormula2)}&maxRecords=1&sort[0][field]=Session Id&sort[0][direction]=desc`, {
+              method: 'GET',
+              headers: headers,
+              keepalive: true
+            });
+          }
+        })
+        .then(response => {
+          if (response && response.ok) {
+            return response.json();
+          }
+          return { records: [] };
+        })
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            console.log('✅ Found record by page 1 data (method 2):', result.records[0].id);
+            localStorage.setItem('airtableRecordId', result.records[0].id);
+            callback(result.records[0].id);
+          } else {
+            // Last resort: Get the most recent record (should be the one from page 1)
+            console.log('🔍 Method 2 failed, trying to get most recent record...');
+            return fetch(`${airtableUrl}?maxRecords=1&sort[0][field]=Session Id&sort[0][direction]=desc`, {
+              method: 'GET',
+              headers: headers,
+              keepalive: true
+            });
+          }
+        })
+        .then(response => {
+          if (response && response.ok) {
+            return response.json();
+          }
+          return { records: [] };
+        })
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            console.log('✅ Found most recent record (method 3):', result.records[0].id);
+            localStorage.setItem('airtableRecordId', result.records[0].id);
+            callback(result.records[0].id);
+          } else {
+            console.error('❌ Page 7 - CRITICAL: Could not find ANY record to update!');
+            console.error('❌ This should not happen - page 1 should have created a record');
+            // Don't create new record - this is an error condition
+            callback(null);
+          }
+        })
+        .catch((error) => {
+          console.error('❌ Error finding record by page 1 data:', error);
+          callback(null);
+        });
+      } else {
+        console.log('❌ Not enough page 1 data to match');
+        // Try to get most recent record as last resort
+        fetch(`${airtableUrl}?maxRecords=1&sort[0][field]=Session Id&sort[0][direction]=desc`, {
+          method: 'GET',
+          headers: headers,
+          keepalive: true
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            console.log('✅ Found most recent record as fallback:', result.records[0].id);
+            localStorage.setItem('airtableRecordId', result.records[0].id);
+            callback(result.records[0].id);
+          } else {
+            callback(null);
+          }
+        })
+        .catch(() => callback(null));
+      }
+    }
+    
+    // Log the payload being sent
+    console.log('📤 Page 7 - Sending to Airtable:', payload);
+    console.log('📋 Page 7 - Fields being sent:', fields);
+    console.log('📋 Page 7 - Fields count:', Object.keys(fields).length);
+    console.log('📧 Page 7 - Email for lookup:', email);
+    
+    // Validate that we have fields to send
+    if (Object.keys(fields).length === 0) {
+      console.error('❌ Page 7 - ERROR: No fields to send! Data object:', data);
+      console.error('❌ Page 7 - Data keys available:', Object.keys(data));
+      return; // Don't send empty payload
+    }
+    
+    // Try to find and update existing record, otherwise create new one
+    findExistingRecord((recordId) => {
+      console.log('🔍 Page 7 - Record lookup result:', recordId ? `Found: ${recordId}` : 'Not found, will create new');
+      
+      if (recordId) {
+        updateRecord(recordId);
+      } else {
+        // CRITICAL: We should NEVER create a new record on page 7
+        // If we can't find the record, something is wrong
+        console.error('❌ Page 7 - CRITICAL ERROR: Could not find existing record!');
+        console.error('❌ Page 7 - This means page 1 record was not found');
+        console.error('❌ Page 7 - Stored record ID:', localStorage.getItem('airtableRecordId'));
+        console.error('❌ Page 7 - Email used for lookup:', email);
+        console.error('❌ Page 7 - Page 1 data available:', {
+          duration: data['data[Duration]'],
+          study: data['data[Study]'],
+          age: data['data[Age]'],
+          gender: data['data[Gender]']
+        });
+        
+        // Try one more time with a simpler lookup - get most recent record
+        console.log('🔄 Page 7 - Last attempt: Getting most recent record...');
+        fetch(`${airtableUrl}?maxRecords=1&sort[0][field]=Session Id&sort[0][direction]=desc`, {
+          method: 'GET',
+          headers: headers,
+          keepalive: true
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(result => {
+          if (result.records && result.records.length > 0) {
+            const recordId = result.records[0].id;
+            console.log('✅ Page 7 - Found most recent record as last resort:', recordId);
+            localStorage.setItem('airtableRecordId', recordId);
+            // Update this record
+            updateRecord(recordId);
+          } else {
+            console.error('❌ Page 7 - No records exist in Airtable at all!');
+            // Still don't create - this is an error, but redirect anyway
+            window.location.href = "guest-pricing-page.html";
+          }
+        })
+        .catch((error) => {
+          console.error('❌ Page 7 - Final lookup attempt failed:', error);
+          // Redirect anyway - don't block user
+          window.location.href = "guest-pricing-page.html";
+        });
       }
     });
+    
+    // Helper function to update an existing record
+    function updateRecord(recordId) {
+      console.log('🔄 Page 7 - Updating existing record:', recordId);
+      console.log('📤 Page 7 - Update payload:', JSON.stringify(payload, null, 2));
+      
+      // Update existing record
+      fetch(`${airtableUrl}/${recordId}`, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify(payload),
+        keepalive: true
+      })
+      .then(response => {
+        console.log('📡 Page 7 - Update response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          return response.json().then(err => {
+            console.error('❌ Page 7 - Update error response:', err);
+            console.error('❌ Page 7 - Full error:', JSON.stringify(err, null, 2));
+            throw new Error(`HTTP ${response.status}: ${JSON.stringify(err)}`);
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        console.log('✅ Page 7 - Airtable record updated successfully!');
+        console.log('📋 Updated record:', JSON.stringify(result, null, 2));
+        // Redirect immediately - API call uses keepalive so it will complete
+        window.location.href = "guest-pricing-page.html";
+      })
+      .catch((error) => {
+        console.error('❌ Page 7 - Airtable update failed:', error);
+        console.error('📋 Error details:', error.message);
+        console.error('📋 Full error:', error);
+        // Don't create new record - redirect anyway (don't block user)
+        window.location.href = "guest-pricing-page.html";
+      });
+    }
+    
+    // Helper function to create a new record (should NEVER be called on page 7)
+    function createNewRecord() {
+      console.log('📤 Page 7 - Create payload:', JSON.stringify(payload, null, 2));
+      console.log('📤 Page 7 - API URL:', airtableUrl);
+      
+      fetch(airtableUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload),
+        keepalive: true
+      })
+      .then(response => {
+        console.log('📡 Page 7 - Create response status:', response.status, response.statusText);
+        console.log('📡 Page 7 - Create response headers:', response.headers);
+        
+        if (!response.ok) {
+          return response.json().then(err => {
+            console.error('❌ Page 7 - Create error response:', err);
+            console.error('❌ Page 7 - Full error:', JSON.stringify(err, null, 2));
+            throw new Error(`HTTP ${response.status}: ${JSON.stringify(err)}`);
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        console.log('✅ Page 7 - Airtable record created successfully!');
+        console.log('📋 Created record:', JSON.stringify(result, null, 2));
+        // Store the new record ID
+        if (result && result.id) {
+          localStorage.setItem('airtableRecordId', result.id);
+          console.log('💾 Page 7 - Stored new record ID:', result.id);
+        }
+        // Redirect immediately - API call uses keepalive so it will complete
+        window.location.href = "guest-pricing-page.html";
+      })
+      .catch((error) => {
+        console.error('❌ Page 7 - Airtable create failed:', error);
+        console.error('📋 Error details:', error.message);
+        console.error('📋 Full error object:', error);
+        console.error('📋 Payload was:', JSON.stringify(payload, null, 2));
+        console.error('📋 Fields sent:', JSON.stringify(fields, null, 2));
+        // Still redirect even on error (user shouldn't be stuck)
+        window.location.href = "guest-pricing-page.html";
+      });
+    }
   }
 
   // Handle form submission
@@ -594,29 +982,94 @@ document.addEventListener("DOMContentLoaded", () => {
     // Sync all toggle values before collecting data (fixes degree toggle issue)
     syncAllToggleValues();
     
-    // Collect form data and merge with page 1 data
-    const formData = new FormData(form);
-    const page7Data = {};
-    
-    // Convert FormData to object
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith('data[')) {
-        page7Data[key] = value;
+    // Wait a bit for Alpine.js to update the hidden inputs
+    setTimeout(() => {
+      // Collect form data and merge with page 1 data
+      const formData = new FormData(form);
+      const page7Data = {};
+      
+      // Convert FormData to object - ensure proper key format
+      for (const [key, value] of formData.entries()) {
+        if (key && key.startsWith('data[') && key.endsWith(']')) {
+          // Ensure the key is properly formatted
+          const cleanKey = key.trim();
+          if (cleanKey && value !== null && value !== undefined) {
+            page7Data[cleanKey] = String(value).trim();
+          }
+        }
       }
-    }
-    
-    // Get page 1 data from localStorage and merge
-    const existingData = JSON.parse(localStorage.getItem('surveyData') || '{}');
-    const allData = { ...existingData, ...page7Data };
-    
-    // Store merged data in localStorage
-    localStorage.setItem('surveyData', JSON.stringify(allData));
+      
+      // Manually capture toggle values if they're not in FormData
+      const toggleInputs = form.querySelectorAll('input[type="hidden"][data-toggle]');
+      toggleInputs.forEach(input => {
+        const name = input.getAttribute('name');
+        if (name && name.startsWith('data[') && name.endsWith(']')) {
+          let toggleValue = 'No'; // Default
+          
+          // Get the value from Alpine.js or from the input directly
+          try {
+            if (window.Alpine && Alpine.$data) {
+              const container = input.closest('[x-data]');
+              if (container) {
+                const alpineData = Alpine.$data(container);
+                if (alpineData && typeof alpineData.on !== 'undefined') {
+                  toggleValue = alpineData.on ? 'Yes' : 'No';
+                }
+              }
+            }
+          } catch (e) {
+            // Fallback to input value
+            if (input.value && input.value.trim() !== '') {
+              toggleValue = input.value.trim();
+            }
+          }
+          
+          page7Data[name] = toggleValue;
+        }
+      });
+      
+      // Also capture text inputs (Name, Email, Zip) directly
+      const nameInput = document.getElementById('firstNameInput');
+      if (nameInput && nameInput.value) {
+        page7Data['data[Name]'] = nameInput.value.trim();
+      }
+      
+      const emailInput = document.getElementById('emailInput');
+      if (emailInput && emailInput.value) {
+        page7Data['data[Email]'] = emailInput.value.trim();
+      }
+      
+      const zipInput = document.getElementById('zipCodeInput');
+      if (zipInput && zipInput.value) {
+        page7Data['data[Zip]'] = zipInput.value.trim();
+      }
+      
+      // Get page 1 data from localStorage and merge
+      const existingData = JSON.parse(localStorage.getItem('surveyData') || '{}');
+      const allData = { ...existingData, ...page7Data };
+      
+      // Clean up any malformed keys
+      const cleanedData = {};
+      for (const [key, value] of Object.entries(allData)) {
+        if (key && typeof key === 'string' && key.startsWith('data[') && key.endsWith(']')) {
+          cleanedData[key] = value;
+        }
+      }
+      
+      // Store merged data in localStorage
+      localStorage.setItem('surveyData', JSON.stringify(cleanedData));
 
-    // Submit all data immediately to Google Sheets using email as identifier (fire-and-forget)
-    submitToSheet(allData, email);
-
-    // Immediately redirect - zero delay
-    window.location.href = "guest-pricing-page.html";
+      // Log the data being sent
+      console.log('📊 Page 7 - Cleaned data to send:', cleanedData);
+      console.log('📊 Page 7 - Data keys:', Object.keys(cleanedData));
+      console.log('📧 Page 7 - Email:', email);
+      
+      // Submit all data immediately to Airtable using email as identifier
+      submitToAirtable(cleanedData, email);
+      
+      // Don't redirect immediately - wait for API call to complete
+      // The redirect will happen after successful API call
+    }, 200);
   });
 });
 </script>
