@@ -292,7 +292,7 @@ Study Situation?</label>
           <button type="button" id="relocateBtn"  data-pill  class="w-full pill border border-[#675F57] lg:px-8 px-4 py-[10px] rounded-full text-[#675F57] lg:text-[20px] text-[16px]  font-[400]">I am interested in relocating</button>
         
         </div>
-         <input id="relocateField" name="data[RelocateLocation]" type="text" class="hidden w-full mt-6 p-3 text-[20px] lg:placeholder:text-[20px]
+         <input id="relocateField" name="data[Relocating]" type="text" class="hidden w-full mt-6 p-3 text-[20px] lg:placeholder:text-[20px]
          placeholder:text-[16px] font-[400] text-center lg:pb-2 pb-4 whitespace-normal placeholder:whitespace-normal
                border-b border-[#675F57] focus:outline-0 focus:border-[#795634] text-[#4A4A4A] placeholder-[rgba(103,95,87,0.30)]"
                placeholder="(Optional) If you're interested in relocating, please describe your ideal location">
@@ -460,32 +460,20 @@ document.addEventListener("DOMContentLoaded", () => {
         // Check relocate pill state (after toggle, so check if it's selected)
         const relocatePill = document.getElementById("relocateBtn");
         const isRelocateSelected = relocatePill && relocatePill.classList.contains("bg-[#675F57]");
-        const relocateText = relocateField.value.trim();
         
         // After toggle, check if this pill is now selected
         if (pill.classList.contains("bg-[#675F57]")) {
-          // If both are selected, combine them
+          // If both are selected, combine them (without relocate text - that goes to separate field)
           if (isRelocateSelected) {
-            let baseValue = "Local area, Interested in relocating";
-            // Append relocate text if user typed something
-            if (relocateText) {
-              localInput.value = baseValue + " - " + relocateText;
-            } else {
-              localInput.value = baseValue;
-            }
+            localInput.value = "Local area, Interested in relocating";
           } else {
             localInput.value = "Local area";
           }
         } else {
           // This pill was just deselected
-          // If relocate is still selected, keep that value with text
+          // If relocate is still selected, keep that value (without text)
           if (isRelocateSelected) {
-            let baseValue = "Interested in relocating";
-            if (relocateText) {
-              localInput.value = baseValue + " - " + relocateText;
-            } else {
-              localInput.value = baseValue;
-            }
+            localInput.value = "Interested in relocating";
           } else {
             localInput.value = "";
           }
@@ -505,20 +493,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // After toggle, check if this pill is now selected
         if (pill.classList.contains("bg-[#675F57]")) {
-          // Build the value with relocate text if available
-          const relocateText = relocateField.value.trim();
+          // Build the value without relocate text (text goes to separate Relocating field)
           let baseValue = "Interested in relocating";
           
           if (isLocalSelected) {
             baseValue = "Local area, Interested in relocating";
           }
           
-          // Append the relocate text if user typed something
-          if (relocateText) {
-            localInput.value = baseValue + " - " + relocateText;
-          } else {
-            localInput.value = baseValue;
-          }
+          localInput.value = baseValue;
         } else {
           // This pill was just deselected - clear relocate field
           relocateField.value = "";
@@ -547,25 +529,8 @@ document.addEventListener("DOMContentLoaded", () => {
           helpAreas = helpAreas.filter(v => v !== val);
         }
 
-        // Build the help areas string
+        // Build the help areas string (without Other text - that goes to separate field)
         let helpAreasStr = helpAreas.join(", ");
-        
-        // If "Other" is selected and has text, append it
-        const isOtherSelected = helpAreas.includes("Other");
-        const otherText = otherField.value.trim();
-        if (isOtherSelected && otherText) {
-          // Replace "Other" with "Other - [text]", but avoid duplicates
-          if (!helpAreasStr.includes("Other - ")) {
-            helpAreasStr = helpAreasStr.replace("Other", "Other - " + otherText);
-          } else {
-            // Already has "Other - ", just update the text part
-            helpAreasStr = helpAreasStr.replace(/Other - [^,]+/, "Other - " + otherText);
-          }
-        } else if (isOtherSelected) {
-          // Other is selected but no text, make sure it's just "Other"
-          helpAreasStr = helpAreasStr.replace(/Other - [^,]+/, "Other");
-        }
-        
         helpInput.value = helpAreasStr;
       }
 
@@ -574,23 +539,13 @@ document.addEventListener("DOMContentLoaded", () => {
       ---------------------------------- */
       if (val === "Other") {
         otherField.classList.toggle("hidden");
-        // Update help areas when Other is toggled
+        // Update help areas when Other is toggled (without text - that goes to separate field)
         if (pill.classList.contains("bg-[#675F57]")) {
           // Other was just selected, update the value
           let helpAreasStr = helpAreas.join(", ");
-          const otherText = otherField.value.trim();
-          if (otherText) {
-            // Replace "Other" with "Other - [text]", but avoid duplicates
-            if (!helpAreasStr.includes("Other - ")) {
-              helpAreasStr = helpAreasStr.replace("Other", "Other - " + otherText);
-            } else {
-              // Already has "Other - ", just update the text part
-              helpAreasStr = helpAreasStr.replace(/Other - [^,]+/, "Other - " + otherText);
-            }
-          }
           helpInput.value = helpAreasStr;
         } else {
-          // Other was just deselected, remove the text part
+          // Other was just deselected
           helpAreas = helpAreas.filter(v => v !== "Other");
           helpInput.value = helpAreas.join(", ");
           otherField.value = "";
@@ -605,58 +560,9 @@ document.addEventListener("DOMContentLoaded", () => {
       UPDATE VALUES WHEN TEXT FIELDS CHANGE
       ====================== */
   
-  // Update Local input when relocate field changes
-  const relocateField = document.getElementById("relocateField");
-  if (relocateField) {
-    relocateField.addEventListener("input", () => {
-      const localInput = document.querySelector("input[name='data[Local]']");
-      const relocatePill = document.getElementById("relocateBtn");
-      const localPill = pills.find(p => p.textContent.trim() === "I want to stay within my local area");
-      const isRelocateSelected = relocatePill && relocatePill.classList.contains("bg-[#675F57]");
-      const isLocalSelected = localPill && localPill.classList.contains("bg-[#675F57]");
-      const relocateText = relocateField.value.trim();
-      
-      if (isRelocateSelected) {
-        let baseValue = "Interested in relocating";
-        if (isLocalSelected) {
-          baseValue = "Local area, Interested in relocating";
-        }
-        
-        if (relocateText) {
-          localInput.value = baseValue + " - " + relocateText;
-        } else {
-          localInput.value = baseValue;
-        }
-      }
-    });
-  }
-  
-  // Update HelpArea input when other field changes
-  const otherField = document.getElementById("otherField");
-  if (otherField) {
-    otherField.addEventListener("input", () => {
-      const helpInput = document.querySelector("input[name='data[HelpArea]']");
-      const isOtherSelected = helpAreas.includes("Other");
-      const otherText = otherField.value.trim();
-      
-      if (isOtherSelected) {
-        let helpAreasStr = helpAreas.join(", ");
-        if (otherText) {
-          // Replace "Other" with "Other - [text]", but avoid duplicates
-          if (!helpAreasStr.includes("Other - ")) {
-            helpAreasStr = helpAreasStr.replace("Other", "Other - " + otherText);
-          } else {
-            // Already has "Other - ", just update the text part
-            helpAreasStr = helpAreasStr.replace(/Other - [^,]+/, "Other - " + otherText);
-          }
-        } else {
-          // No text, make sure it's just "Other"
-          helpAreasStr = helpAreasStr.replace(/Other - [^,]+/, "Other");
-        }
-        helpInput.value = helpAreasStr;
-      }
-    });
-  }
+  // Note: relocateField and otherField are now separate fields
+  // They don't need to update Local or HelpArea fields anymore
+  // The text will be sent directly to "Relocating" and "OtherHelpArea" fields in Airtable
 
   /* ======================
       CHECK FORM COMPLETION
@@ -752,9 +658,17 @@ document.addEventListener("DOMContentLoaded", () => {
       ? String(data['data[Local]']) 
       : 'Not Selected Yet'; // Long text
     
+    fields['Relocating'] = (data['data[Relocating]'] && String(data['data[Relocating]']).trim() !== '') 
+      ? String(data['data[Relocating]']) 
+      : 'Not Selected Yet'; // Long text - separate field for relocate text
+    
     fields['HelpArea'] = (data['data[HelpArea]'] && String(data['data[HelpArea]']).trim() !== '') 
       ? String(data['data[HelpArea]']) 
       : 'Not Selected Yet'; // Long text
+    
+    fields['OtherHelpArea'] = (data['data[OtherHelpArea]'] && String(data['data[OtherHelpArea]']).trim() !== '') 
+      ? String(data['data[OtherHelpArea]']) 
+      : 'Not Selected Yet'; // Long text - separate field for other text
     
     // Toggle switches - default to "Not Selected Yet" if not set
     fields['Pets'] = (data['data[Pets]'] && String(data['data[Pets]']).trim() !== '') 
@@ -792,6 +706,19 @@ document.addEventListener("DOMContentLoaded", () => {
     fields['Selected Plan'] = (data['data[Selected Plan]'] && String(data['data[Selected Plan]']).trim() !== '') 
       ? String(data['data[Selected Plan]']) 
       : 'Not Selected Yet';
+    
+    // Generate Date in MM/DD format (e.g., 11/23) - no year
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed, so add 1
+    const day = String(now.getDate()).padStart(2, '0');
+    fields['Date'] = `${month}/${day}`;
+    
+    // Generate Time in 24-hour format HH:mm with AM/PM (e.g., 13:43 PM)
+    const hours24 = now.getHours();
+    const hours = String(hours24).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+    fields['Time'] = `${hours}:${minutes} ${ampm}`;
     
     // Note: Session Id is autonumber in Airtable, so we don't set it here
     // It will be auto-generated by Airtable when the record is created
@@ -859,7 +786,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const page1Data = {};
     
     // Convert FormData to object and store in localStorage
-    // The relocate and other text are already combined into Local and HelpArea fields
+    // Relocate and other text are now in separate fields (Relocating and OtherHelpArea)
     for (const [key, value] of formData.entries()) {
       if (key.startsWith('data[')) {
         page1Data[key] = value;

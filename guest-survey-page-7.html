@@ -547,8 +547,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const local = getFieldValue('data[Local]');
     if (local) fields['Local'] = local; // Long text
     
+    const relocating = getFieldValue('data[Relocating]');
+    if (relocating) fields['Relocating'] = relocating; // Long text - separate field for relocate text
+    
     const helpArea = getFieldValue('data[HelpArea]');
     if (helpArea) fields['HelpArea'] = helpArea; // Long text
+    
+    const otherHelpArea = getFieldValue('data[OtherHelpArea]');
+    if (otherHelpArea) fields['OtherHelpArea'] = otherHelpArea; // Long text - separate field for other text
     
     // Toggle switches - only update if they have actual values (Yes/No)
     const pets = getFieldValue('data[Pets]');
